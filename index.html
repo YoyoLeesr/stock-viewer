@@ -1,0 +1,2587 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Pick@Stock Transaction Analyzer Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      padding: 30px;
+    }
+    h1 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 28px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .controls-section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .row label {
+      font-weight: 600;
+      color: #555;
+      min-width: 140px;
+    }
+    input {
+      flex: 1;
+      min-width: 300px;
+      padding: 10px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    select {
+      padding: 10px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: #5a6268;
+    }
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+    .btn-success:hover:not(:disabled) {
+      background: #218838;
+    }
+    #status {
+      padding: 12px;
+      border-radius: 6px;
+      margin: 15px 0;
+      font-size: 14px;
+      display: none;
+    }
+    #status.show { display: block; }
+    #status.loading {
+      background: #cfe2ff;
+      color: #084298;
+      border-left: 4px solid #0d6efd;
+    }
+    #status.error {
+      background: #f8d7da;
+      color: #842029;
+      border-left: 4px solid #dc3545;
+    }
+    #status.success {
+      background: #d1e7dd;
+      color: #0f5132;
+      border-left: 4px solid #28a745;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .stat-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+    }
+    .chart-section {
+      margin: 30px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      display: none;
+    }
+    .chart-section h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chart-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .control-group label {
+      font-weight: 600;
+      color: #555;
+      font-size: 13px;
+    }
+    .control-group select {
+      width: 100%;
+    }
+    .control-group input[type="checkbox"] {
+      width: auto;
+      min-width: auto;
+      margin-right: 8px;
+    }
+    .control-group input[type="number"] {
+      width: 100%;
+      min-width: auto;
+      padding: 8px;
+    }
+    .control-group input[type="date"] {
+      width: 100%;
+      min-width: auto;
+      padding: 8px;
+    }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .chart-wrapper {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      height: 500px;
+      position: relative;
+    }
+    .chart-wrapper.large {
+      height: 600px;
+    }
+    .indicator-panel {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .indicator-panel h4 {
+      margin: 0 0 12px 0;
+      color: #333;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .indicator-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .indicator-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border-radius: 4px;
+      background: #f8f9fa;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .indicator-option:hover {
+      background: #e9ecef;
+    }
+    .indicator-option input[type="checkbox"] {
+      min-width: auto;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .indicator-option label {
+      cursor: pointer;
+      font-size: 13px;
+      color: #495057;
+      flex: 1;
+    }
+    .advanced-settings {
+      background: #fff;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 10px;
+      border: 1px solid #e0e0e0;
+    }
+    .settings-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .stock-filter-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 10px;
+      background: white;
+    }
+    .stock-filter-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px;
+      cursor: pointer;
+    }
+    .stock-filter-item:hover {
+      background: #f0f0f0;
+    }
+    .stock-filter-item input[type="checkbox"] {
+      min-width: auto;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .filter-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .action-bar {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+    .pagination {
+      display: none;
+      gap: 8px;
+      align-items: center;
+      margin: 20px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      flex-wrap: wrap;
+    }
+    .pagination button {
+      min-width: 80px;
+    }
+    .pagination span {
+      padding: 0 10px;
+      color: #666;
+      font-weight: 600;
+    }
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #dee2e6;
+      padding: 12px;
+      font-size: 14px;
+      text-align: left;
+    }
+    th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      cursor: pointer;
+      user-select: none;
+    }
+    th:hover {
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    th .sort-icon {
+      margin-left: 5px;
+      font-size: 12px;
+    }
+    tbody tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+    tbody tr:hover {
+      background: #e7f1ff;
+      transition: background 0.2s;
+    }
+    .filter-row {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+      flex-wrap: wrap;
+    }
+    .filter-row input {
+      flex: 1;
+      min-width: 200px;
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    .empty-state svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+    .metric-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 2px;
+    }
+    .metric-badge.positive {
+      background: #d1f2eb;
+      color: #0f5132;
+    }
+    .metric-badge.negative {
+      background: #f8d7da;
+      color: #842029;
+    }
+    .metric-badge.neutral {
+      background: #e7f1ff;
+      color: #084298;
+    }
+    .collapsible-section {
+      margin-bottom: 15px;
+    }
+    .section-header {
+      background: #667eea;
+      color: white;
+      padding: 12px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+    .section-header:hover {
+      background: #5568d3;
+    }
+    .section-content {
+      padding: 15px;
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+    }
+    .section-content.collapsed {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Pick@Stock Transaction Analyzer Pro</h1>
+    <p class="subtitle">Advanced technical analysis with institutional transaction tracking</p>
+    
+    <div class="controls-section">
+      <div class="row">
+        <label>Entity Name:</label>
+        <input
+          id="entity"
+          placeholder="e.g., EMPLOYEES' PROVIDENT FUND BOARD"
+          list="entitySuggestions"
+          aria-label="Entity name"
+        />
+        <datalist id="entitySuggestions">
+          <option value="EMPLOYEES' PROVIDENT FUND BOARD">
+          <option value="PERMODALAN NASIONAL BERHAD">
+          <option value="LEMBAGA TABUNG HAJI">
+        </datalist>
+        <button id="search" class="btn-primary" aria-label="Search transactions">
+          <span id="searchText">🔍 Search</span>
+        </button>
+      </div>
+      <div class="row">
+        <label>Rows per API call:</label>
+        <select id="rowsPerPage" aria-label="Rows per page">
+          <option value="50">50</option>
+          <option value="100" selected>100</option>
+          <option value="200">200</option>
+          <option value="500">500</option>
+        </select>
+        <label style="margin-left: 20px;">Max pages:</label>
+        <select id="maxPages" aria-label="Maximum pages">
+          <option value="5">5 (Quick - ~500 rows)</option>
+          <option value="10">10 (Fast - ~1,000 rows)</option>
+          <option value="50" selected>50 (Medium - ~5,000 rows)</option>
+          <option value="100">100 (Large - ~10,000 rows)</option>
+          <option value="200">200 (Full - ~20,000 rows)</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="status" role="alert"></div>
+
+    <div class="stats-grid" id="statsGrid" style="display:none;">
+      <div class="stat-card">
+        <h3>Total Transactions</h3>
+        <p class="value" id="statTotal">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Unique Stocks</h3>
+        <p class="value" id="statStocks">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Total Shares</h3>
+        <p class="value" id="statShares">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Date Range</h3>
+        <p class="value" id="statDateRange" style="font-size: 16px;">-</p>
+      </div>
+    </div>
+
+    <!-- Enhanced Chart Section -->
+    <div class="chart-section" id="chartSection">
+      <h3>📈 Advanced Technical Analysis</h3>
+      
+      <!-- Collapsible Basic Controls -->
+      <div class="collapsible-section">
+        <div class="section-header" onclick="toggleSection('basicControls')">
+          <span>⚙️ Basic Controls</span>
+          <span id="basicControlsToggle">▼</span>
+        </div>
+        <div class="section-content" id="basicControls">
+          <div class="chart-controls">
+            <div class="control-group">
+              <label>View Mode:</label>
+              <select id="chartViewMode">
+                <option value="all">All Stocks Combined</option>
+                <option value="individual">Individual Stock</option>
+                <option value="selected">Selected Stocks</option>
+              </select>
+            </div>
+            <div class="control-group" id="individualStockSelector" style="display:none;">
+              <label>Select Stock:</label>
+              <select id="chartStockSelect"></select>
+            </div>
+            <div class="control-group">
+              <label>X-Axis (Time):</label>
+              <select id="chartXAxis">
+                <option value="transDate">Transaction Date</option>
+                <option value="annDate">Announcement Date</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label>Group By:</label>
+              <select id="chartGroupBy">
+                <option value="transaction">By Transaction</option>
+                <option value="day" selected>By Day</option>
+                <option value="week">By Week</option>
+                <option value="month">By Month</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label>Date Range:</label>
+              <select id="dateRangePreset">
+                <option value="all">All Time</option>
+                <option value="1m">Last Month</option>
+                <option value="3m" selected>Last 3 Months</option>
+                <option value="6m">Last 6 Months</option>
+                <option value="1y">Last Year</option>
+                <option value="ytd">Year to Date</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+            <div class="control-group" id="customDateRange" style="display:none;">
+              <label>From Date:</label>
+              <input type="date" id="dateRangeStart">
+            </div>
+            <div class="control-group" id="customDateRange2" style="display:none;">
+              <label>To Date:</label>
+              <input type="date" id="dateRangeEnd">
+            </div>
+            <div class="control-group">
+              <label>Sort Order:</label>
+              <select id="chartSortOrder">
+                <option value="asc" selected>Oldest First (Timeline)</option>
+                <option value="desc">Newest First (Recent)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Collapsible Technical Indicators -->
+      <div class="collapsible-section">
+        <div class="section-header" onclick="toggleSection('indicators')">
+          <span>📊 Technical Indicators</span>
+          <span id="indicatorsToggle">▼</span>
+        </div>
+        <div class="section-content" id="indicators">
+          <div class="indicator-panel">
+            <h4>🎯 Moving Averages</h4>
+            <div class="indicator-grid">
+              <div class="indicator-option">
+                <input type="checkbox" id="showSMA" checked>
+                <label for="showSMA">SMA (Simple Moving Average)</label>
+              </div>
+              <div class="indicator-option">
+                <input type="checkbox" id="showEMA">
+                <label for="showEMA">EMA (Exponential Moving Average)</label>
+              </div>
+            </div>
+            <div class="advanced-settings">
+              <div class="settings-row">
+                <div class="control-group">
+                  <label>SMA Period:</label>
+                  <input type="number" id="smaPeriod" value="20" min="2" max="200">
+                </div>
+                <div class="control-group">
+                  <label>EMA Period:</label>
+                  <input type="number" id="emaPeriod" value="20" min="2" max="200">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="indicator-panel">
+            <h4>📉 Trend & Momentum</h4>
+            <div class="indicator-grid">
+              <div class="indicator-option">
+                <input type="checkbox" id="showBollinger">
+                <label for="showBollinger">Bollinger Bands</label>
+              </div>
+              <div class="indicator-option">
+                <input type="checkbox" id="showRSI">
+                <label for="showRSI">RSI (Relative Strength Index)</label>
+              </div>
+              <div class="indicator-option">
+                <input type="checkbox" id="showMACD">
+                <label for="showMACD">MACD</label>
+              </div>
+              <div class="indicator-option">
+                <input type="checkbox" id="showVolume" checked>
+                <label for="showVolume">Volume Analysis</label>
+              </div>
+            </div>
+            <div class="advanced-settings">
+              <div class="settings-row">
+                <div class="control-group">
+                  <label>Bollinger Period:</label>
+                  <input type="number" id="bollingerPeriod" value="20" min="5" max="50">
+                </div>
+                <div class="control-group">
+                  <label>Bollinger StdDev:</label>
+                  <input type="number" id="bollingerStdDev" value="2" min="1" max="3" step="0.1">
+                </div>
+                <div class="control-group">
+                  <label>RSI Period:</label>
+                  <input type="number" id="rsiPeriod" value="14" min="5" max="30">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="indicator-panel">
+            <h4>💰 Price & Transaction Overlays</h4>
+            <div class="indicator-grid">
+              <div class="indicator-option">
+                <input type="checkbox" id="showPriceOverlay" checked>
+                <label for="showPriceOverlay">Close Price</label>
+              </div>
+              <div class="indicator-option">
+                <input type="checkbox" id="showOpenPrice">
+                <label for="showOpenPrice">Open Price</label>
+              </div>
+              <div class="indicator-option">
+                <input type="checkbox" id="showHighLow">
+                <label for="showHighLow">High/Low Range</label>
+              </div>
+              <div class="indicator-option">
+                <input type="checkbox" id="fillMissingDates" checked>
+                <label for="fillMissingDates">Fill Missing Dates</label>
+              </div>
+              <div class="indicator-option">
+                <input type="checkbox" id="showTransactionMarkers" checked>
+                <label for="showTransactionMarkers">Transaction Markers</label>
+              </div>
+              <div class="indicator-option">
+                <input type="checkbox" id="showPriceChange">
+                <label for="showPriceChange">Price Change %</label>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 15px;">
+            <button id="updateChart" class="btn-primary" style="padding: 12px 30px; font-size: 16px;">
+              🔄 Update Chart & Analysis
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multi Stock Selector -->
+      <div id="multiStockSelector" style="display:none; margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 10px; font-weight: 600;">Select Stocks to Display:</label>
+        <div class="stock-filter-list" id="stockFilterList"></div>
+        <div class="filter-actions">
+          <button id="selectAllStocks" class="btn-secondary">✓ Select All</button>
+          <button id="deselectAllStocks" class="btn-secondary">✗ Deselect All</button>
+          <button id="selectTop10Stocks" class="btn-secondary">🔝 Top 10 by Volume</button>
+        </div>
+      </div>
+
+      <!-- Charts Grid -->
+      <div class="chart-grid">
+        <div class="chart-wrapper large">
+          <canvas id="mainChart"></canvas>
+        </div>
+        <div class="chart-wrapper" id="indicatorChartWrapper" style="display:none;">
+          <canvas id="indicatorChart"></canvas>
+        </div>
+        <div class="chart-wrapper">
+          <canvas id="volumeChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rest of the original HTML (action bar, filters, table, etc.) -->
+    <div class="action-bar" id="actionBar" style="display:none;">
+      <button id="exportCSV" class="btn-success">📥 Export to CSV</button>
+      <button id="exportJSON" class="btn-secondary">📄 Export to JSON</button>
+      <button id="clearFilters" class="btn-secondary">🔄 Clear Filters</button>
+    </div>
+
+    <div class="filter-row" id="filterRow" style="display:none;">
+      <input id="filterStock" placeholder="🔍 Filter by Stock Code or Name..." aria-label="Filter by stock" />
+      <input id="filterType" placeholder="🔍 Filter by Transaction Type..." aria-label="Filter by type" />
+      <select id="sortBy" aria-label="Sort data">
+        <option value="">Sort by...</option>
+        <option value="annDate-desc">Date (Newest First)</option>
+        <option value="annDate-asc">Date (Oldest First)</option>
+        <option value="shares-desc">Shares (Highest First)</option>
+        <option value="shares-asc">Shares (Lowest First)</option>
+        <option value="stockCode-asc">Stock Code (A-Z)</option>
+      </select>
+    </div>
+
+    <div class="pagination" id="pagination">
+      <button id="firstPage" class="btn-secondary">⏮ First</button>
+      <button id="prevPage" class="btn-secondary">◀ Previous</button>
+      <span id="pageInfo">Page 1 of 1</span>
+      <button id="nextPage" class="btn-secondary">Next ▶</button>
+      <button id="lastPage" class="btn-secondary">Last ⏭</button>
+      <span id="recordInfo" style="margin-left: 20px;"></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="tbl" style="display:none;" role="table" aria-label="Transaction data">
+        <thead role="rowgroup">
+          <tr role="row">
+            <th role="columnheader" data-col="annDate" aria-sort="none">Ann Date <span class="sort-icon">⇅</span></th>
+            <th role="columnheader" data-col="stockCode" aria-sort="none">Stock Code <span class="sort-icon">⇅</span></th>
+            <th role="columnheader" data-col="stockName" aria-sort="none">Stock Name <span class="sort-icon">⇅</span></th>
+            <th role="columnheader" data-col="transDate" aria-sort="none">Trans Date <span class="sort-icon">⇅</span></th>
+            <th role="columnheader" data-col="type" aria-sort="none">Type <span class="sort-icon">⇅</span></th>
+            <th role="columnheader" data-col="shares" aria-sort="none">Shares <span class="sort-icon">⇅</span></th>
+            <th role="columnheader" data-col="registeredHolder" aria-sort="none">Registered Holder <span class="sort-icon">⇅</span></th>
+            <th role="columnheader" data-col="remarks" aria-sort="none">Remarks <span class="sort-icon">⇅</span></th>
+            <th role="columnheader" data-col="totalShareAfterChange" aria-sort="none">Total Share After <span class="sort-icon">⇅</span></th>
+          </tr>
+        </thead>
+        <tbody id="tbody" role="rowgroup"></tbody>
+      </table>
+    </div>
+
+    <div class="empty-state" id="emptyState">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <h3>No Data Yet</h3>
+      <p>Enter an entity name and click Search to begin</p>
+    </div>
+  </div>
+
+<script>
+// ============ CONFIGURATION ============
+const apiBase = "http://localhost:5177";
+
+// ============ DOM ELEMENTS ============
+const statusEl = document.getElementById("status");
+const tbl = document.getElementById("tbl");
+const tbody = document.getElementById("tbody");
+const paginationEl = document.getElementById("pagination");
+const pageInfoEl = document.getElementById("pageInfo");
+const recordInfoEl = document.getElementById("recordInfo");
+const statsGridEl = document.getElementById("statsGrid");
+const actionBarEl = document.getElementById("actionBar");
+const filterRowEl = document.getElementById("filterRow");
+const emptyStateEl = document.getElementById("emptyState");
+
+// ============ STATE VARIABLES ============
+let allData = [];
+let filteredData = [];
+let currentPage = 1;
+let rowsPerDisplayPage = 100;
+let currentSort = { col: null, asc: true };
+let filterTimeout = null;
+let currentRequest = null;
+
+// Chart state
+let mainChart = null;
+let indicatorChart = null;
+let volumeChart = null;
+let chartData = [];
+let stockPriceData = {};
+
+// ============ UTILITY FUNCTIONS ============
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  const div = document.createElement('div');
+  div.textContent = String(text);
+  return div.innerHTML;
+}
+
+function parseDate(dateStr) {
+  if (!dateStr) return null;
+  const parts = dateStr.trim().split('/');
+  if (parts.length === 3) {
+    let [day, month, year] = parts;
+    if (year.length === 2) {
+      const yearNum = parseInt(year);
+      year = yearNum > 50 ? '19' + year : '20' + year;
+    }
+    day = day.padStart(2, '0');
+    month = month.padStart(2, '0');
+    const isoDate = year + '-' + month + '-' + day;
+    const date = new Date(isoDate);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+  const date = new Date(dateStr);
+  return isNaN(date.getTime()) ? null : date;
+}
+
+function toSortableDate(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.trim().split('/');
+  if (parts.length === 3) {
+    let [day, month, year] = parts;
+    if (year.length === 2) {
+      const yearNum = parseInt(year);
+      year = yearNum > 50 ? '19' + year : '20' + year;
+    }
+    return year + '-' + month.padStart(2, '0') + '-' + day.padStart(2, '0');
+  }
+  return dateStr;
+}
+
+function setStatus(msg, type = "") {
+  statusEl.textContent = msg;
+  statusEl.className = type ? 'show ' + type : "";
+  if (type) statusEl.style.display = 'block';
+}
+
+function hideStatus() {
+  statusEl.style.display = 'none';
+}
+
+function getTotalPages() {
+  return Math.ceil(filteredData.length / rowsPerDisplayPage) || 1;
+}
+
+function toggleSection(sectionId) {
+  const content = document.getElementById(sectionId);
+  const toggle = document.getElementById(sectionId + 'Toggle');
+  
+  if (content.classList.contains('collapsed')) {
+    content.classList.remove('collapsed');
+    toggle.textContent = '▼';
+  } else {
+    content.classList.add('collapsed');
+    toggle.textContent = '▶';
+  }
+}
+
+// ============ TECHNICAL INDICATOR CALCULATIONS ============
+
+function calculateSMA(data, period) {
+  const result = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result.push(null);
+      continue;
+    }
+    let sum = 0;
+    for (let j = 0; j < period; j++) {
+      sum += data[i - j];
+    }
+    result.push(sum / period);
+  }
+  return result;
+}
+
+function calculateEMA(data, period) {
+  const result = [];
+  const multiplier = 2 / (period + 1);
+  let ema = data[0];
+  result.push(ema);
+  
+  for (let i = 1; i < data.length; i++) {
+    if (data[i] === null || data[i] === undefined) {
+      result.push(null);
+      continue;
+    }
+    ema = (data[i] - ema) * multiplier + ema;
+    result.push(ema);
+  }
+  return result;
+}
+
+function calculateBollingerBands(data, period, stdDev) {
+  const sma = calculateSMA(data, period);
+  const upper = [];
+  const lower = [];
+  
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      upper.push(null);
+      lower.push(null);
+      continue;
+    }
+    
+    let sum = 0;
+    for (let j = 0; j < period; j++) {
+      sum += Math.pow(data[i - j] - sma[i], 2);
+    }
+    const std = Math.sqrt(sum / period);
+    upper.push(sma[i] + (std * stdDev));
+    lower.push(sma[i] - (std * stdDev));
+  }
+  
+  return { sma, upper, lower };
+}
+
+function calculateRSI(data, period) {
+  const result = [];
+  const gains = [];
+  const losses = [];
+  
+  for (let i = 1; i < data.length; i++) {
+    const change = data[i] - data[i - 1];
+    gains.push(change > 0 ? change : 0);
+    losses.push(change < 0 ? Math.abs(change) : 0);
+  }
+  
+  result.push(null); // First value is always null
+  
+  for (let i = 0; i < gains.length; i++) {
+    if (i < period - 1) {
+      result.push(null);
+      continue;
+    }
+    
+    let avgGain = 0;
+    let avgLoss = 0;
+    
+    for (let j = 0; j < period; j++) {
+      avgGain += gains[i - j];
+      avgLoss += losses[i - j];
+    }
+    
+    avgGain /= period;
+    avgLoss /= period;
+    
+    if (avgLoss === 0) {
+      result.push(100);
+    } else {
+      const rs = avgGain / avgLoss;
+      const rsi = 100 - (100 / (1 + rs));
+      result.push(rsi);
+    }
+  }
+  
+  return result;
+}
+
+function calculateMACD(data) {
+  const ema12 = calculateEMA(data, 12);
+  const ema26 = calculateEMA(data, 26);
+  const macdLine = [];
+  
+  for (let i = 0; i < data.length; i++) {
+    if (ema12[i] === null || ema26[i] === null) {
+      macdLine.push(null);
+    } else {
+      macdLine.push(ema12[i] - ema26[i]);
+    }
+  }
+  
+  const signalLine = calculateEMA(macdLine.filter(v => v !== null), 9);
+  
+  // Pad signal line with nulls to match length
+  const paddedSignal = [];
+  let signalIndex = 0;
+  for (let i = 0; i < macdLine.length; i++) {
+    if (macdLine[i] === null) {
+      paddedSignal.push(null);
+    } else {
+      paddedSignal.push(signalLine[signalIndex++] || null);
+    }
+  }
+  
+  const histogram = [];
+  for (let i = 0; i < macdLine.length; i++) {
+    if (macdLine[i] === null || paddedSignal[i] === null) {
+      histogram.push(null);
+    } else {
+      histogram.push(macdLine[i] - paddedSignal[i]);
+    }
+  }
+  
+  return { macdLine, signalLine: paddedSignal, histogram };
+}
+
+// ============ STOCK PRICE FUNCTIONS ============
+async function fetchStockPrices() {
+  if (chartData.length === 0) return;
+  
+  const uniqueStocks = [...new Set(chartData.map(d => d.stockCode))].filter(s => s);
+  
+  if (uniqueStocks.length === 0) {
+    console.log('No stocks to fetch prices for');
+    return;
+  }
+
+  const dates = chartData.map(d => d.transSortDate || d.annSortDate).filter(d => d).sort();
+  const startDate = dates[0];
+  const endDate = dates[dates.length - 1];
+  
+  console.log('📈 Fetching prices for ' + uniqueStocks.length + ' stocks from ' + startDate + ' to ' + endDate);
+  setStatus('📈 Fetching stock prices for ' + uniqueStocks.length + ' stocks...', 'loading');
+
+  try {
+    const batchSize = 50;
+    const batches = [];
+    
+    for (let i = 0; i < uniqueStocks.length; i += batchSize) {
+      batches.push(uniqueStocks.slice(i, i + batchSize));
+    }
+    
+    console.log('📦 Split into ' + batches.length + ' batches');
+
+    let totalSuccess = 0;
+    const allPriceData = {};
+
+    for (let i = 0; i < batches.length; i++) {
+      const batch = batches[i];
+      setStatus('📈 Fetching prices: Batch ' + (i + 1) + '/' + batches.length + '...', 'loading');
+
+      const stocksParam = encodeURIComponent(batch.join(','));
+      const url = apiBase + '/api/stock-prices-batch?stocks=' + stocksParam + '&startDate=' + startDate + '&endDate=' + endDate;
+
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        throw new Error('Price API error: ' + resp.status);
+      }
+
+      const json = await resp.json();
+      Object.assign(allPriceData, json.data || {});
+      totalSuccess += json.successCount || 0;
+
+      if (i < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    }
+
+    stockPriceData = allPriceData;
+    console.log('✅ Stock prices loaded: ' + totalSuccess + '/' + uniqueStocks.length);
+
+    setStatus('✅ Stock prices loaded (' + totalSuccess + '/' + uniqueStocks.length + ' stocks)', 'success');
+    setTimeout(hideStatus, 3000);
+
+  } catch (e) {
+    console.error('Failed to fetch stock prices:', e);
+    setStatus('⚠️ Stock prices unavailable', 'error');
+    stockPriceData = {};
+  }
+}
+
+function getPriceForDate(stockCode, dateStr, priceType = 'close') {
+  if (!stockPriceData[stockCode]) return null;
+  
+  const prices = stockPriceData[stockCode];
+  if (!prices || prices.length === 0) return null;
+
+  const targetDate = dateStr.split('T')[0];
+  let price = prices.find(p => p.date === targetDate);
+  
+  if (!price && prices.length > 0) {
+    price = prices.reduce((prev, curr) => {
+      const prevDiff = Math.abs(new Date(prev.date) - new Date(targetDate));
+      const currDiff = Math.abs(new Date(curr.date) - new Date(targetDate));
+      return currDiff < prevDiff ? curr : prev;
+    });
+  }
+
+  if (!price) return null;
+
+  switch(priceType) {
+    case 'open': return price.open;
+    case 'close': return price.close;
+    case 'high': return price.high;
+    case 'low': return price.low;
+    default: return price.close;
+  }
+}
+
+// ============ DATE RANGE FILTER ============
+function applyDateRangeFilter(data) {
+  const dateRangePreset = document.getElementById('dateRangePreset')?.value || 'all';
+  
+  if (dateRangePreset === 'all') {
+    return data;
+  }
+  
+  const now = new Date();
+  let startDate = null;
+  
+  if (dateRangePreset === 'custom') {
+    const customStart = document.getElementById('dateRangeStart')?.value;
+    const customEnd = document.getElementById('dateRangeEnd')?.value;
+    
+    if (customStart || customEnd) {
+      return data.filter(d => {
+        const itemDate = d.sortKey || d.transSortDate || d.annSortDate;
+        if (!itemDate) return false;
+        
+        const dateOnly = itemDate.split('T')[0];
+        
+        if (customStart && customEnd) {
+          return dateOnly >= customStart && dateOnly <= customEnd;
+        } else if (customStart) {
+          return dateOnly >= customStart;
+        } else if (customEnd) {
+          return dateOnly <= customEnd;
+        }
+        return true;
+      });
+    }
+    return data;
+  }
+  
+  switch(dateRangePreset) {
+    case '1m':
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      break;
+    case '3m':
+      startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+      break;
+    case '6m':
+      startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+      break;
+    case '1y':
+      startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      break;
+    case 'ytd':
+      startDate = new Date(now.getFullYear(), 0, 1);
+      break;
+    default:
+      return data;
+  }
+  
+  const startDateStr = startDate.toISOString().split('T')[0];
+  
+  const filtered = data.filter(d => {
+    const itemDate = d.sortKey || d.transSortDate || d.annSortDate;
+    if (!itemDate) return false;
+    
+    const dateOnly = itemDate.split('T')[0];
+    return dateOnly >= startDateStr;
+  });
+  
+  console.log('Date filter: ' + data.length + ' → ' + filtered.length + ' items (from ' + startDateStr + ')');
+  
+  return filtered;
+}
+
+// ============ FILL MISSING DATES ============
+function fillMissingDatesWithPrices(groupedData, viewMode) {
+  if (groupedData.length === 0) return groupedData;
+  if (viewMode === 'all') return groupedData;
+
+  const fillEnabled = document.getElementById('fillMissingDates')?.checked ?? true;
+  if (!fillEnabled) return groupedData;
+
+  const showPrice = document.getElementById('showPriceOverlay')?.checked ?? true;
+  if (!showPrice) return groupedData;
+
+  const stockCode = groupedData[0]?.stockCode;
+  if (!stockCode || !stockPriceData[stockCode]) return groupedData;
+
+  const prices = stockPriceData[stockCode];
+  if (!prices || prices.length === 0) return groupedData;
+
+  const transactionMap = {};
+  groupedData.forEach(d => {
+    transactionMap[d.sortKey] = d;
+  });
+
+  const filledData = [];
+  let lastHolding = 0;
+
+  if (groupedData.length > 0) {
+    lastHolding = groupedData[0].totalShareAfterChange || 0;
+  }
+
+  prices.forEach(price => {
+    const dateKey = price.date;
+    
+    if (transactionMap[dateKey]) {
+      const txn = transactionMap[dateKey];
+      lastHolding = txn.totalShareAfterChange;
+      filledData.push(txn);
+    } else {
+      filledData.push({
+        label: dateKey + ' ' + stockCode,
+        date: dateKey,
+        stockCode: stockCode,
+        netShares: 0,
+        totalShareAfterChange: lastHolding,
+        sortKey: dateKey,
+        hasTransaction: false
+      });
+    }
+  });
+
+  return filledData;
+}
+
+// ============ STATISTICS ============
+function calculateStats() {
+  if (allData.length === 0) return;
+
+  const uniqueStocks = new Set(allData.map(r => r.stockCode)).size;
+  const totalShares = allData.reduce((sum, r) => sum + (Number(r.shares) || 0), 0);
+  
+  const dates = allData
+    .map(r => r.annDate || r.transDate)
+    .filter(d => d)
+    .sort();
+
+  const dateRange = dates.length > 0
+    ? dates[0] + ' to ' + dates[dates.length - 1]
+    : '-';
+
+  document.getElementById("statTotal").textContent = allData.length.toLocaleString();
+  document.getElementById("statStocks").textContent = uniqueStocks.toLocaleString();
+  document.getElementById("statShares").textContent = totalShares.toLocaleString();
+  document.getElementById("statDateRange").textContent = dateRange;
+  
+  statsGridEl.style.display = 'grid';
+}
+
+// ============ FILTERING & SORTING ============
+function applyFilters() {
+  const stockFilter = document.getElementById("filterStock").value.toLowerCase();
+  const typeFilter = document.getElementById("filterType").value.toLowerCase();
+
+  filteredData = allData.filter(r => {
+    const matchStock = !stockFilter ||
+      (r.stockCode || '').toLowerCase().includes(stockFilter) ||
+      (r.stockName || '').toLowerCase().includes(stockFilter);
+    
+    const matchType = !typeFilter ||
+      (r.type || '').toLowerCase().includes(typeFilter);
+
+    return matchStock && matchType;
+  });
+
+  currentPage = 1;
+  renderPage();
+}
+
+function sortData(col, asc) {
+  filteredData.sort((a, b) => {
+    let valA = a[col];
+    let valB = b[col];
+
+    if (col === 'shares' || col === 'totalShareAfterChange') {
+      valA = Number(valA) || 0;
+      valB = Number(valB) || 0;
+    } else {
+      valA = String(valA || '').toLowerCase();
+      valB = String(valB || '').toLowerCase();
+    }
+
+    if (valA < valB) return asc ? -1 : 1;
+    if (valA > valB) return asc ? 1 : -1;
+    return 0;
+  });
+
+  renderPage();
+}
+
+// ============ PAGINATION ============
+function updatePaginationControls() {
+  const totalPages = getTotalPages();
+  
+  document.getElementById("firstPage").disabled = currentPage === 1;
+  document.getElementById("prevPage").disabled = currentPage === 1;
+  document.getElementById("nextPage").disabled = currentPage === totalPages;
+  document.getElementById("lastPage").disabled = currentPage === totalPages;
+  
+  pageInfoEl.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+  
+  const startRecord = (currentPage - 1) * rowsPerDisplayPage + 1;
+  const endRecord = Math.min(currentPage * rowsPerDisplayPage, filteredData.length);
+  
+  recordInfoEl.textContent = 'Showing ' + startRecord + '-' + endRecord + ' of ' + filteredData.length + ' records';
+}
+
+// ============ TABLE RENDERING ============
+function renderPage() {
+  tbody.innerHTML = "";
+
+  if (filteredData.length === 0) {
+    tbl.style.display = "none";
+    paginationEl.style.display = "none";
+    if (allData.length === 0) {
+      emptyStateEl.style.display = "block";
+    }
+    return;
+  }
+
+  emptyStateEl.style.display = "none";
+
+  const startIdx = (currentPage - 1) * rowsPerDisplayPage;
+  const endIdx = Math.min(startIdx + rowsPerDisplayPage, filteredData.length);
+  const pageData = filteredData.slice(startIdx, endIdx);
+
+  for (const r of pageData) {
+    const tr = document.createElement("tr");
+    tr.setAttribute('role', 'row');
+
+    let typeColor = '#6c757d';
+    const typeText = (r.type ?? "").toUpperCase();
+    if (typeText.includes('ACQUIRED')) {
+      typeColor = '#28a745';
+    } else if (typeText.includes('DISPOSED')) {
+      typeColor = '#dc3545';
+    }
+
+    tr.innerHTML = '<td role="cell">' + escapeHtml(r.annDate) + '</td>' +
+      '<td role="cell"><strong>' + escapeHtml(r.stockCode) + '</strong></td>' +
+      '<td role="cell">' + escapeHtml(r.stockName) + '</td>' +
+      '<td role="cell">' + escapeHtml(r.transDate) + '</td>' +
+      '<td role="cell"><span style="color: ' + typeColor + '; font-weight: 600;">' + escapeHtml(r.type) + '</span></td>' +
+      '<td role="cell" style="text-align: right;">' + (r.shares || 0).toLocaleString() + '</td>' +
+      '<td role="cell">' + escapeHtml(r.registeredHolder) + '</td>' +
+      '<td role="cell">' + escapeHtml(r.remarks) + '</td>' +
+      '<td role="cell" style="text-align: right;">' + (r.totalShareAfterChange || 0).toLocaleString() + '</td>';
+    
+    tbody.appendChild(tr);
+  }
+
+  tbl.style.display = "";
+  paginationEl.style.display = "flex";
+  updatePaginationControls();
+}
+
+// ============ CHART PREPARATION ============
+async function prepareChartData() {
+  if (allData.length === 0) return;
+
+  chartData = allData.map(item => {
+    const shares = Number(item.shares) || 0;
+    const typeText = (item.type || '').toUpperCase();
+    const netShares = typeText.includes('DISPOSED') ? -shares : shares;
+
+    return {
+      transDate: item.transDate || '',
+      annDate: item.annDate || '',
+      transSortDate: toSortableDate(item.transDate || ''),
+      annSortDate: toSortableDate(item.annDate || ''),
+      stockCode: item.stockCode || '',
+      stockName: item.stockName || '',
+      type: item.type || '',
+      shares: shares,
+      netShares: netShares,
+      totalShareAfterChange: Number(item.totalShareAfterChange) || 0,
+      originalItem: item
+    };
+  });
+
+  const uniqueStocks = [...new Set(chartData.map(d => d.stockCode))].filter(s => s).sort();
+
+  const stockSelect = document.getElementById('chartStockSelect');
+  stockSelect.innerHTML = uniqueStocks.map(code =>
+    '<option value="' + escapeHtml(code) + '">' + escapeHtml(code) + '</option>'
+  ).join('');
+
+  populateStockFilter(uniqueStocks);
+
+  document.getElementById('chartSection').style.display = 'block';
+
+  await fetchStockPrices();
+  updateChart();
+}
+
+function populateStockFilter(stocks) {
+  const filterList = document.getElementById('stockFilterList');
+  
+  const stockVolumes = {};
+  chartData.forEach(d => {
+    if (!stockVolumes[d.stockCode]) {
+      stockVolumes[d.stockCode] = 0;
+    }
+    stockVolumes[d.stockCode] += Math.abs(d.netShares);
+  });
+
+  filterList.innerHTML = stocks.map(code => 
+    '<label class="stock-filter-item">' +
+      '<input type="checkbox" value="' + escapeHtml(code) + '" class="stock-checkbox" checked>' +
+      '<span>' + escapeHtml(code) + ' (' + stockVolumes[code].toLocaleString() + ' shares)</span>' +
+    '</label>'
+  ).join('');
+}
+
+// ============ GROUP DATA ============
+function groupData(data, groupBy, viewMode, xAxis) {
+  if (groupBy === 'transaction') {
+    return data.map((d) => {
+      const sortField = xAxis === 'transDate' ? 'transSortDate' : 'annSortDate';
+      return {
+        label: d[xAxis] + ' ' + d.stockCode,
+        date: d[xAxis],
+        stockCode: d.stockCode,
+        netShares: d.netShares,
+        totalShareAfterChange: d.totalShareAfterChange,
+        type: d.type,
+        sortKey: d[sortField]
+      };
+    });
+  }
+
+  const groups = {};
+
+  data.forEach(d => {
+    let key;
+    let sortKey;
+    const dateStr = d[xAxis];
+    
+    if (!dateStr) return;
+
+    const date = parseDate(dateStr);
+    if (!date) return;
+
+    const sortField = xAxis === 'transDate' ? 'transSortDate' : 'annSortDate';
+    const sortableDate = d[sortField];
+
+    if (groupBy === 'day') {
+      key = dateStr;
+      sortKey = sortableDate;
+    } else if (groupBy === 'week') {
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate() - date.getDay());
+      const weekStr = weekStart.toISOString().split('T')[0];
+      key = 'Week of ' + weekStr;
+      sortKey = weekStr;
+    } else if (groupBy === 'month') {
+      const monthStr = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+      key = monthStr;
+      sortKey = monthStr;
+    }
+
+    if (viewMode === 'all') {
+      if (!groups[key]) {
+        groups[key] = {
+          acquired: 0,
+          disposed: 0,
+          net: 0,
+          totalShareAfterChange: 0,
+          count: 0,
+          sortKey: sortKey,
+          items: []
+        };
+      }
+
+      if (d.netShares > 0) {
+        groups[key].acquired += d.netShares;
+      } else {
+        groups[key].disposed += d.netShares;
+      }
+      
+      groups[key].net += d.netShares;
+      groups[key].items.push({
+        date: sortableDate,
+        totalShareAfterChange: d.totalShareAfterChange,
+        stockCode: d.stockCode
+      });
+      groups[key].count += 1;
+    } else {
+      const groupKey = key + '|' + d.stockCode;
+      
+      if (!groups[groupKey]) {
+        groups[groupKey] = {
+          date: key,
+          stockCode: d.stockCode,
+          net: 0,
+          totalShareAfterChange: 0,
+          count: 0,
+          sortKey: sortKey,
+          items: []
+        };
+      }
+
+      groups[groupKey].net += d.netShares;
+      groups[groupKey].items.push({
+        date: sortableDate,
+        totalShareAfterChange: d.totalShareAfterChange
+      });
+      groups[groupKey].count += 1;
+    }
+  });
+
+  const result = Object.entries(groups).map(([key, value]) => {
+    value.items.sort((a, b) => b.date.localeCompare(a.date));
+    const lastTotal = value.items.length > 0 ? value.items[0].totalShareAfterChange : 0;
+
+    if (viewMode === 'all') {
+      return {
+        label: key,
+        acquired: value.acquired,
+        disposed: value.disposed,
+        net: value.net,
+        totalShareAfterChange: lastTotal,
+        sortKey: value.sortKey,
+        stockCode: null
+      };
+    } else {
+      const [date, stockCode] = key.split('|');
+      return {
+        label: date + ' ' + stockCode,
+        date: date,
+        stockCode: stockCode,
+        netShares: value.net,
+        totalShareAfterChange: lastTotal,
+        sortKey: value.sortKey
+      };
+    }
+  });
+
+  result.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+  return result;
+}
+
+// ============ UPDATE CHART (MAIN RENDER FUNCTION) ============
+function updateChart() {
+  const viewMode = document.getElementById('chartViewMode').value;
+  const groupBy = document.getElementById('chartGroupBy').value;
+  const xAxis = document.getElementById('chartXAxis').value;
+  const sortOrder = document.getElementById('chartSortOrder').value;
+
+  let filtered = [...chartData];
+
+  if (viewMode === 'individual') {
+    const selectedStock = document.getElementById('chartStockSelect').value;
+    filtered = filtered.filter(d => d.stockCode === selectedStock);
+  } else if (viewMode === 'selected') {
+    const selectedStocks = Array.from(document.querySelectorAll('.stock-checkbox:checked'))
+      .map(cb => cb.value);
+    filtered = filtered.filter(d => selectedStocks.includes(d.stockCode));
+  }
+
+  // Apply date range filter
+  filtered = applyDateRangeFilter(filtered);
+
+  const sortField = xAxis === 'transDate' ? 'transSortDate' : 'annSortDate';
+  
+  filtered.sort((a, b) => {
+    const dateA = a[sortField] || '';
+    const dateB = b[sortField] || '';
+    return sortOrder === 'desc'
+      ? dateB.localeCompare(dateA)
+      : dateA.localeCompare(dateB);
+  });
+
+  let groupedData = groupData(filtered, groupBy, viewMode, xAxis);
+
+  // Fill missing dates
+  if (viewMode === 'individual' && groupBy === 'day') {
+    groupedData = fillMissingDatesWithPrices(groupedData, viewMode);
+  }
+
+  // Apply date filter again after filling
+  groupedData = applyDateRangeFilter(groupedData);
+
+  console.log('Rendering ' + groupedData.length + ' data points');
+
+  renderMainChart(groupedData, viewMode, groupBy, sortOrder);
+  renderVolumeChart(groupedData, viewMode);
+  renderIndicatorChart(groupedData, viewMode);
+}
+
+// ============ RENDER MAIN CHART ============
+function renderMainChart(data, viewMode, groupBy, sortOrder) {
+  const ctx = document.getElementById('mainChart');
+  if (!ctx) return;
+
+  if (mainChart) {
+    try {
+      mainChart.destroy();
+    } catch (e) {
+      console.warn('Error destroying chart:', e);
+    }
+    mainChart = null;
+  }
+
+  try {
+    const labels = data.map(d => d.sortKey || d.date);
+    const showPrice = document.getElementById('showPriceOverlay')?.checked ?? true;
+    const showOpenPrice = document.getElementById('showOpenPrice')?.checked ?? false;
+    const showHighLow = document.getElementById('showHighLow')?.checked ?? false;
+    const showSMA = document.getElementById('showSMA')?.checked ?? true;
+    const showEMA = document.getElementById('showEMA')?.checked ?? false;
+    const showBollinger = document.getElementById('showBollinger')?.checked ?? false;
+    const showTransactionMarkers = document.getElementById('showTransactionMarkers')?.checked ?? true;
+
+    // Get price data
+    const priceDataClose = data.map(d => {
+      if (!showPrice || !d.stockCode) return null;
+      const dateStr = d.sortKey || d.date;
+      return getPriceForDate(d.stockCode, dateStr, 'close');
+    });
+
+    const priceDataOpen = data.map(d => {
+      if (!showOpenPrice || !d.stockCode) return null;
+      const dateStr = d.sortKey || d.date;
+      return getPriceForDate(d.stockCode, dateStr, 'open');
+    });
+
+    const priceDataHigh = data.map(d => {
+      if (!showHighLow || !d.stockCode) return null;
+      const dateStr = d.sortKey || d.date;
+      return getPriceForDate(d.stockCode, dateStr, 'high');
+    });
+
+    const priceDataLow = data.map(d => {
+      if (!showHighLow || !d.stockCode) return null;
+      const dateStr = d.sortKey || d.date;
+      return getPriceForDate(d.stockCode, dateStr, 'low');
+    });
+
+    const datasets = [];
+
+    // Transaction markers
+    if (showTransactionMarkers) {
+      const transactionPoints = data.map((d, i) => {
+        if (d.hasTransaction === false || (d.netShares === 0 && !d.type)) {
+          return null;
+        }
+        return priceDataClose[i];
+      });
+
+      datasets.push({
+        type: 'scatter',
+        label: 'Transactions',
+        data: transactionPoints,
+        backgroundColor: data.map(d => {
+          if (d.netShares > 0) return 'rgba(40, 167, 69, 0.8)';
+          if (d.netShares < 0) return 'rgba(220, 53, 69, 0.8)';
+          return 'transparent';
+        }),
+        borderColor: data.map(d => {
+          if (d.netShares > 0) return 'rgba(40, 167, 69, 1)';
+          if (d.netShares < 0) return 'rgba(220, 53, 69, 1)';
+          return 'transparent';
+        }),
+        borderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        yAxisID: 'y2'
+      });
+    }
+
+    // Close price
+    if (showPrice && priceDataClose.some(p => p !== null)) {
+      datasets.push({
+        type: 'line',
+        label: 'Close Price',
+        data: priceDataClose,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        yAxisID: 'y2',
+        spanGaps: true
+      });
+
+      // Technical indicators on price
+      const validPrices = priceDataClose.filter(p => p !== null && p > 0);
+
+      if (showSMA && validPrices.length > 0) {
+        const smaPeriod = parseInt(document.getElementById('smaPeriod')?.value || 20);
+        const sma = calculateSMA(validPrices, smaPeriod);
+        
+        // Pad SMA to match original data length
+        const paddedSMA = [];
+        let smaIndex = 0;
+        priceDataClose.forEach(price => {
+          if (price === null) {
+            paddedSMA.push(null);
+          } else {
+            paddedSMA.push(sma[smaIndex++] || null);
+          }
+        });
+
+        datasets.push({
+          type: 'line',
+          label: 'SMA(' + smaPeriod + ')',
+          data: paddedSMA,
+          borderColor: 'rgba(255, 159, 64, 1)',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1,
+          pointRadius: 0,
+          yAxisID: 'y2',
+          spanGaps: true,
+          borderDash: [5, 5]
+        });
+      }
+
+      if (showEMA && validPrices.length > 0) {
+        const emaPeriod = parseInt(document.getElementById('emaPeriod')?.value || 20);
+        const ema = calculateEMA(validPrices, emaPeriod);
+        
+        const paddedEMA = [];
+        let emaIndex = 0;
+        priceDataClose.forEach(price => {
+          if (price === null) {
+            paddedEMA.push(null);
+          } else {
+            paddedEMA.push(ema[emaIndex++] || null);
+          }
+        });
+
+        datasets.push({
+          type: 'line',
+          label: 'EMA(' + emaPeriod + ')',
+          data: paddedEMA,
+          borderColor: 'rgba(153, 102, 255, 1)',
+          borderWidth: 2,
+          fill: false,
+          tension: 0.1,
+          pointRadius: 0,
+          yAxisID: 'y2',
+          spanGaps: true,
+          borderDash: [10, 5]
+        });
+      }
+
+      if (showBollinger && validPrices.length > 0) {
+        const bollingerPeriod = parseInt(document.getElementById('bollingerPeriod')?.value || 20);
+        const bollingerStdDev = parseFloat(document.getElementById('bollingerStdDev')?.value || 2);
+        const bollinger = calculateBollingerBands(validPrices, bollingerPeriod, bollingerStdDev);
+        
+        const paddedUpper = [];
+        const paddedLower = [];
+        let bbIndex = 0;
+        priceDataClose.forEach(price => {
+          if (price === null) {
+            paddedUpper.push(null);
+            paddedLower.push(null);
+          } else {
+            paddedUpper.push(bollinger.upper[bbIndex] || null);
+            paddedLower.push(bollinger.lower[bbIndex] || null);
+            bbIndex++;
+          }
+        });
+
+        datasets.push({
+          type: 'line',
+          label: 'BB Upper',
+          data: paddedUpper,
+          borderColor: 'rgba(255, 99, 132, 0.5)',
+          borderWidth: 1,
+          fill: false,
+          pointRadius: 0,
+          yAxisID: 'y2',
+          spanGaps: true
+        });
+
+        datasets.push({
+          type: 'line',
+          label: 'BB Lower',
+          data: paddedLower,
+          borderColor: 'rgba(255, 99, 132, 0.5)',
+          borderWidth: 1,
+          fill: '-1',
+          backgroundColor: 'rgba(255, 99, 132, 0.1)',
+          pointRadius: 0,
+          yAxisID: 'y2',
+          spanGaps: true
+        });
+      }
+    }
+
+    // Open price
+    if (showOpenPrice && priceDataOpen.some(p => p !== null)) {
+      datasets.push({
+        type: 'line',
+        label: 'Open Price',
+        data: priceDataOpen,
+        borderColor: 'rgba(153, 102, 255, 0.7)',
+        borderWidth: 1,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 0,
+        yAxisID: 'y2',
+        spanGaps: true,
+        borderDash: [3, 3]
+      });
+    }
+
+    // High/Low range
+    if (showHighLow && priceDataHigh.some(p => p !== null)) {
+      datasets.push({
+        type: 'line',
+        label: 'High',
+        data: priceDataHigh,
+        borderColor: 'rgba(40, 167, 69, 0.3)',
+        borderWidth: 1,
+        fill: false,
+        pointRadius: 0,
+        yAxisID: 'y2',
+        spanGaps: true
+      });
+
+      datasets.push({
+        type: 'line',
+        label: 'Low',
+        data: priceDataLow,
+        borderColor: 'rgba(220, 53, 69, 0.3)',
+        borderWidth: 1,
+        fill: '-1',
+        backgroundColor: 'rgba(200, 200, 200, 0.1)',
+        pointRadius: 0,
+        yAxisID: 'y2',
+        spanGaps: true
+      });
+    }
+
+    // Holdings line
+    const totalShareValues = data.map(d => d.totalShareAfterChange || 0);
+    datasets.push({
+      type: 'line',
+      label: 'Total Holdings',
+      data: totalShareValues,
+      borderColor: 'rgba(54, 162, 235, 1)',
+      backgroundColor: 'rgba(54, 162, 235, 0.1)',
+      borderWidth: 3,
+      fill: true,
+      tension: 0.1,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      yAxisID: 'y'
+    });
+
+    const sortLabel = sortOrder === 'desc' ? 'Latest → Oldest' : 'Oldest → Latest';
+
+    // Calculate price axis range
+    const allPrices = [...priceDataClose, ...priceDataOpen, ...priceDataHigh, ...priceDataLow]
+      .filter(p => p !== null && p > 0);
+    
+    let priceMin = 0;
+    let priceMax = 10;
+    
+    if (allPrices.length > 0) {
+      priceMin = Math.min(...allPrices);
+      priceMax = Math.max(...allPrices);
+      const pricePadding = (priceMax - priceMin) * 0.1;
+      priceMin = Math.max(0, priceMin - pricePadding);
+      priceMax = priceMax + pricePadding;
+    }
+
+    const scales = {
+      x: {
+        type: 'category',
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45,
+          autoSkip: true,
+          maxTicksLimit: 20
+        },
+        title: {
+          display: true,
+          text: 'Date (' + sortLabel + ')'
+        }
+      },
+      y: {
+        type: 'linear',
+        position: 'left',
+        title: {
+          display: true,
+          text: 'Holdings (Shares)',
+          color: 'rgba(54, 162, 235, 1)'
+        },
+        ticks: {
+          callback: function(value) {
+            return value.toLocaleString();
+          }
+        }
+      }
+    };
+
+    if (showPrice && allPrices.length > 0) {
+      scales.y2 = {
+        type: 'linear',
+        position: 'right',
+        title: {
+          display: true,
+          text: 'Price (RM)',
+          color: 'rgba(75, 192, 192, 1)'
+        },
+        min: priceMin,
+        max: priceMax,
+        grid: {
+          drawOnChartArea: false
+        },
+        ticks: {
+          callback: function(value) {
+            return 'RM ' + value.toFixed(2);
+          }
+        }
+      };
+    }
+
+    mainChart = new Chart(ctx.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: 'Holdings & Price Analysis - ' + sortLabel,
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            display: true,
+            position: 'top'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = context.parsed.y;
+                if (context.dataset.label.includes('Price') || context.dataset.label.includes('SMA') || 
+                    context.dataset.label.includes('EMA') || context.dataset.label.includes('BB') ||
+                    context.dataset.label.includes('High') || context.dataset.label.includes('Low')) {
+                  return value !== null ? context.dataset.label + ': RM ' + value.toFixed(2) : context.dataset.label + ': N/A';
+                }
+                return context.dataset.label + ': ' + (value?.toLocaleString() || 'N/A');
+              }
+            }
+          }
+        },
+        scales: scales
+      }
+    });
+
+  } catch (e) {
+    console.error('Error creating main chart:', e);
+    setStatus('❌ Chart rendering failed', 'error');
+  }
+}
+
+// ============ RENDER VOLUME CHART ============
+function renderVolumeChart(data, viewMode) {
+  const ctx = document.getElementById('volumeChart');
+  if (!ctx) return;
+
+  if (volumeChart) {
+    try {
+      volumeChart.destroy();
+    } catch (e) {
+      console.warn('Error destroying volume chart:', e);
+    }
+    volumeChart = null;
+  }
+
+  const showVolume = document.getElementById('showVolume')?.checked ?? true;
+  if (!showVolume) {
+    document.getElementById('volumeChart').parentElement.style.display = 'none';
+    return;
+  }
+
+  document.getElementById('volumeChart').parentElement.style.display = 'block';
+
+  try {
+    const labels = data.map(d => d.sortKey || d.date);
+    
+    let datasets;
+    
+    if (viewMode === 'all') {
+      datasets = [
+        {
+          type: 'bar',
+          label: 'Acquired',
+          data: data.map(d => d.acquired || 0),
+          backgroundColor: 'rgba(40, 167, 69, 0.7)',
+          borderColor: 'rgba(40, 167, 69, 1)',
+          borderWidth: 1
+        },
+        {
+          type: 'bar',
+          label: 'Disposed',
+          data: data.map(d => d.disposed || 0),
+          backgroundColor: 'rgba(220, 53, 69, 0.7)',
+          borderColor: 'rgba(220, 53, 69, 1)',
+          borderWidth: 1
+        }
+      ];
+    } else {
+      datasets = [{
+        type: 'bar',
+        label: 'Net Share Change',
+        data: data.map(d => d.netShares || d.net || 0),
+        backgroundColor: data.map(d => {
+          const val = d.netShares || d.net || 0;
+          return val >= 0 ? 'rgba(40, 167, 69, 0.7)' : 'rgba(220, 53, 69, 0.7)';
+        }),
+        borderColor: data.map(d => {
+          const val = d.netShares || d.net || 0;
+          return val >= 0 ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)';
+        }),
+        borderWidth: 1
+      }];
+    }
+
+    volumeChart = new Chart(ctx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Transaction Volume Analysis',
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            display: true,
+            position: 'top'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' shares';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            stacked: viewMode === 'all',
+            ticks: {
+              maxRotation: 45,
+              minRotation: 45,
+              autoSkip: true,
+              maxTicksLimit: 20
+            }
+          },
+          y: {
+            stacked: viewMode === 'all',
+            title: {
+              display: true,
+              text: 'Shares'
+            },
+            ticks: {
+              callback: function(value) {
+                return value.toLocaleString();
+              }
+            }
+          }
+        }
+      }
+    });
+
+  } catch (e) {
+    console.error('Error creating volume chart:', e);
+  }
+}
+
+// ============ RENDER INDICATOR CHART (RSI, MACD) ============
+function renderIndicatorChart(data, viewMode) {
+  const ctx = document.getElementById('indicatorChart');
+  if (!ctx) return;
+
+  const showRSI = document.getElementById('showRSI')?.checked ?? false;
+  const showMACD = document.getElementById('showMACD')?.checked ?? false;
+
+  if (!showRSI && !showMACD) {
+    document.getElementById('indicatorChartWrapper').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('indicatorChartWrapper').style.display = 'block';
+
+  if (indicatorChart) {
+    try {
+      indicatorChart.destroy();
+    } catch (e) {
+      console.warn('Error destroying indicator chart:', e);
+    }
+    indicatorChart = null;
+  }
+
+  try {
+    const labels = data.map(d => d.sortKey || d.date);
+    
+    // Get price data
+    const priceData = data.map(d => {
+      if (!d.stockCode) return null;
+      const dateStr = d.sortKey || d.date;
+      return getPriceForDate(d.stockCode, dateStr, 'close');
+    });
+
+    const validPrices = priceData.filter(p => p !== null && p > 0);
+    
+    if (validPrices.length === 0) {
+      console.warn('No valid price data for indicators');
+      return;
+    }
+
+    const datasets = [];
+
+    if (showRSI) {
+      const rsiPeriod = parseInt(document.getElementById('rsiPeriod')?.value || 14);
+      const rsi = calculateRSI(validPrices, rsiPeriod);
+      
+      // Pad RSI
+      const paddedRSI = [];
+      let rsiIndex = 0;
+      priceData.forEach(price => {
+        if (price === null) {
+          paddedRSI.push(null);
+        } else {
+          paddedRSI.push(rsi[rsiIndex++] || null);
+        }
+      });
+
+      datasets.push({
+        type: 'line',
+        label: 'RSI(' + rsiPeriod + ')',
+        data: paddedRSI,
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 0,
+        yAxisID: 'y',
+        spanGaps: true
+      });
+
+      // RSI reference lines
+      datasets.push({
+        type: 'line',
+        label: 'Overbought (70)',
+        data: Array(labels.length).fill(70),
+        borderColor: 'rgba(255, 0, 0, 0.3)',
+        borderWidth: 1,
+        borderDash: [5, 5],
+        fill: false,
+        pointRadius: 0,
+        yAxisID: 'y'
+      });
+
+      datasets.push({
+        type: 'line',
+        label: 'Oversold (30)',
+        data: Array(labels.length).fill(30),
+        borderColor: 'rgba(0, 255, 0, 0.3)',
+        borderWidth: 1,
+        borderDash: [5, 5],
+        fill: false,
+        pointRadius: 0,
+        yAxisID: 'y'
+      });
+    }
+
+    if (showMACD) {
+      const macd = calculateMACD(validPrices);
+      
+      // Pad MACD values
+      const paddedMACD = [];
+      const paddedSignal = [];
+      const paddedHistogram = [];
+      let macdIndex = 0;
+      
+      priceData.forEach(price => {
+        if (price === null) {
+          paddedMACD.push(null);
+          paddedSignal.push(null);
+          paddedHistogram.push(null);
+        } else {
+          paddedMACD.push(macd.macdLine[macdIndex] || null);
+          paddedSignal.push(macd.signalLine[macdIndex] || null);
+          paddedHistogram.push(macd.histogram[macdIndex] || null);
+          macdIndex++;
+        }
+      });
+
+      datasets.push({
+        type: 'line',
+        label: 'MACD',
+        data: paddedMACD,
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 0,
+        yAxisID: showRSI ? 'y2' : 'y',
+        spanGaps: true
+      });
+
+      datasets.push({
+        type: 'line',
+        label: 'Signal',
+        data: paddedSignal,
+        borderColor: 'rgba(255, 159, 64, 1)',
+        borderWidth: 2,
+        fill: false,
+        tension: 0.1,
+        pointRadius: 0,
+        yAxisID: showRSI ? 'y2' : 'y',
+        spanGaps: true
+      });
+
+      datasets.push({
+        type: 'bar',
+        label: 'Histogram',
+        data: paddedHistogram,
+        backgroundColor: paddedHistogram.map(v => v >= 0 ? 'rgba(40, 167, 69, 0.5)' : 'rgba(220, 53, 69, 0.5)'),
+        yAxisID: showRSI ? 'y2' : 'y'
+      });
+    }
+
+    const scales = {
+      x: {
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45,
+          autoSkip: true,
+          maxTicksLimit: 20
+        }
+      }
+    };
+
+    if (showRSI) {
+      scales.y = {
+        type: 'linear',
+        position: 'left',
+        title: {
+          display: true,
+          text: 'RSI'
+        },
+        min: 0,
+        max: 100
+      };
+    }
+
+    if (showMACD) {
+      scales[showRSI ? 'y2' : 'y'] = {
+        type: 'linear',
+        position: showRSI ? 'right' : 'left',
+        title: {
+          display: true,
+          text: 'MACD'
+        },
+        grid: showRSI ? {
+          drawOnChartArea: false
+        } : {}
+      };
+    }
+
+    indicatorChart = new Chart(ctx.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Technical Indicators',
+            font: { size: 16, weight: 'bold' }
+          },
+          legend: {
+            display: true,
+            position: 'top'
+          }
+        },
+        scales: scales
+      }
+    });
+
+  } catch (e) {
+    console.error('Error creating indicator chart:', e);
+  }
+}
+
+// ============ EVENT LISTENERS ============
+
+// Pagination
+document.getElementById("firstPage").addEventListener("click", () => {
+  currentPage = 1;
+  renderPage();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.getElementById("prevPage").addEventListener("click", () => {
+  if (currentPage > 1) {
+    currentPage--;
+    renderPage();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
+document.getElementById("nextPage").addEventListener("click", () => {
+  if (currentPage < getTotalPages()) {
+    currentPage++;
+    renderPage();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
+document.getElementById("lastPage").addEventListener("click", () => {
+  currentPage = getTotalPages();
+  renderPage();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// Table sorting
+document.querySelectorAll("th[data-col]").forEach(th => {
+  th.addEventListener("click", () => {
+    const col = th.dataset.col;
+    
+    if (currentSort.col === col) {
+      currentSort.asc = !currentSort.asc;
+    } else {
+      currentSort.col = col;
+      currentSort.asc = true;
+    }
+
+    sortData(col, currentSort.asc);
+
+    document.querySelectorAll("th .sort-icon").forEach(icon => {
+      icon.textContent = "⇅";
+    });
+    th.querySelector(".sort-icon").textContent = currentSort.asc ? "▲" : "▼";
+
+    document.querySelectorAll("th[data-col]").forEach(header => {
+      header.setAttribute('aria-sort', 'none');
+    });
+    th.setAttribute('aria-sort', currentSort.asc ? 'ascending' : 'descending');
+  });
+});
+
+// Filters
+document.getElementById("filterStock").addEventListener("input", () => {
+  clearTimeout(filterTimeout);
+  filterTimeout = setTimeout(applyFilters, 300);
+});
+
+document.getElementById("filterType").addEventListener("input", () => {
+  clearTimeout(filterTimeout);
+  filterTimeout = setTimeout(applyFilters, 300);
+});
+
+document.getElementById("sortBy").addEventListener("change", (e) => {
+  const [col, dir] = e.target.value.split('-');
+  if (col) {
+    currentSort = { col, asc: dir === 'asc' };
+    sortData(col, currentSort.asc);
+  }
+});
+
+document.getElementById("clearFilters").addEventListener("click", () => {
+  document.getElementById("filterStock").value = "";
+  document.getElementById("filterType").value = "";
+  document.getElementById("sortBy").value = "";
+  
+  filteredData = [...allData];
+  currentPage = 1;
+  renderPage();
+});
+
+// Export
+document.getElementById("exportCSV").addEventListener("click", () => {
+  const entity = document.getElementById("entity").value.trim();
+  const rows = document.getElementById("rowsPerPage").value;
+  const maxPages = document.getElementById("maxPages").value;
+  
+  const url = apiBase + '/api/transactions.csv?entity=' + encodeURIComponent(entity) + '&rows=' + rows + '&maxPages=' + maxPages;
+  window.open(url, '_blank');
+});
+
+document.getElementById("exportJSON").addEventListener("click", () => {
+  const dataStr = JSON.stringify(filteredData, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'transactions_' + Date.now() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Chart controls
+document.getElementById('chartViewMode').addEventListener('change', (e) => {
+  const mode = e.target.value;
+  document.getElementById('individualStockSelector').style.display =
+    mode === 'individual' ? 'flex' : 'none';
+  document.getElementById('multiStockSelector').style.display =
+    mode === 'selected' ? 'block' : 'none';
+});
+
+document.getElementById('dateRangePreset').addEventListener('change', (e) => {
+  const customRangeDiv = document.getElementById('customDateRange');
+  const customRangeDiv2 = document.getElementById('customDateRange2');
+  
+  if (e.target.value === 'custom') {
+    if (customRangeDiv) customRangeDiv.style.display = 'flex';
+    if (customRangeDiv2) customRangeDiv2.style.display = 'flex';
+  } else {
+    if (customRangeDiv) customRangeDiv.style.display = 'none';
+    if (customRangeDiv2) customRangeDiv2.style.display = 'none';
+  }
+});
+
+document.getElementById('updateChart').addEventListener('click', updateChart);
+
+// Stock selection
+document.getElementById('selectAllStocks').addEventListener('click', () => {
+  document.querySelectorAll('.stock-checkbox').forEach(cb => cb.checked = true);
+});
+
+document.getElementById('deselectAllStocks').addEventListener('click', () => {
+  document.querySelectorAll('.stock-checkbox').forEach(cb => cb.checked = false);
+});
+
+document.getElementById('selectTop10Stocks').addEventListener('click', () => {
+  const stockVolumes = {};
+  chartData.forEach(d => {
+    if (!stockVolumes[d.stockCode]) stockVolumes[d.stockCode] = 0;
+    stockVolumes[d.stockCode] += Math.abs(d.netShares);
+  });
+
+  const top10 = Object.entries(stockVolumes)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([code]) => code);
+
+  document.querySelectorAll('.stock-checkbox').forEach(cb => {
+    cb.checked = top10.includes(cb.value);
+  });
+});
+
+// Search
+document.getElementById("search").addEventListener("click", async () => {
+  const entity = document.getElementById("entity").value.trim();
+  
+  if (!entity) {
+    setStatus("⚠️ Please enter an entity name", "error");
+    return;
+  }
+
+  const rows = document.getElementById("rowsPerPage").value;
+  const maxPages = document.getElementById("maxPages").value;
+  const estimatedMax = rows * maxPages;
+
+  const searchBtn = document.getElementById("search");
+  const searchText = document.getElementById("searchText");
+  
+  searchBtn.disabled = true;
+  searchText.innerHTML = '<span class="loading-spinner"></span> Loading...';
+
+  setStatus('⏳ Fetching up to ' + estimatedMax.toLocaleString() + ' records...', "loading");
+
+  allData = [];
+  filteredData = [];
+  currentPage = 1;
+  tbody.innerHTML = "";
+  tbl.style.display = "none";
+  paginationEl.style.display = "none";
+  statsGridEl.style.display = "none";
+  actionBarEl.style.display = "none";
+  filterRowEl.style.display = "none";
+  emptyStateEl.style.display = "none";
+  document.getElementById('chartSection').style.display = "none";
+  stockPriceData = {};
+
+  if (currentRequest) {
+    currentRequest.abort();
+  }
+  currentRequest = new AbortController();
+
+  const url = apiBase + '/api/transactions?entity=' + encodeURIComponent(entity) + '&rows=' + rows + '&maxPages=' + maxPages;
+
+  try {
+    const startTime = Date.now();
+    const resp = await fetch(url, { signal: currentRequest.signal });
+    const json = await resp.json();
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+    if (!resp.ok) {
+      setStatus("❌ Error: " + (json.error || resp.status), "error");
+      return;
+    }
+
+    allData = json.data || [];
+    filteredData = [...allData];
+
+    const count = json.count || 0;
+    const pagesFetched = json.pagesFetched || 0;
+    const stopped = json.stoppedBecause || "";
+
+    if (allData.length > 0) {
+      setStatus('✅ Loaded ' + count.toLocaleString() + ' transactions in ' + elapsed + 's (' + pagesFetched + ' pages, ' + stopped + ')', "success");
+      calculateStats();
+      renderPage();
+      actionBarEl.style.display = "flex";
+      filterRowEl.style.display = "flex";
+      await prepareChartData();
+    } else {
+      setStatus("⚠️ No transactions found for this entity", "error");
+      emptyStateEl.style.display = "block";
+    }
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      console.log('Request cancelled');
+      setStatus("⚠️ Request cancelled", "error");
+    } else {
+      setStatus("❌ Network error: " + e.message, "error");
+    }
+  } finally {
+    searchBtn.disabled = false;
+    searchText.innerHTML = "🔍 Search";
+    currentRequest = null;
+  }
+});
+
+document.getElementById("entity").addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    document.getElementById("search").click();
+  }
+});
+
+// Initialize
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof Chart === 'undefined') {
+    setStatus('❌ Chart library failed to load. Charts will be unavailable.', 'error');
+    document.getElementById('chartSection').style.display = 'none';
+  }
+});
+</script>
+</body>
+</html>
