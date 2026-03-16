@@ -1619,9 +1619,93 @@
 
     <script>
         // ============================================================================
-        // CONFIGURATION
+        // CONFIGURATION - Smart Environment Detection
         // ============================================================================
-        const apiBase = "http://localhost:5177";
+
+        // 1. Detect if running locally or in production
+        const isLocalhost = window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname === '';
+
+        // 2. Check for manual override (stored in browser)
+        const manualOverride = localStorage.getItem('apiBase');
+
+        // 3. Determine API base URL (Priority: manual > auto-detect)
+        const apiBase = manualOverride ||
+            (isLocalhost
+                ? "http://localhost:5177"  // Local development
+                : "https://stock-viewer-backend.onrender.com");  // Production
+
+        // 4. Log environment info
+        const environment = isLocalhost ? '🧪 DEVELOPMENT' : '🚀 PRODUCTION';
+        console.log('═══════════════════════════════════════');
+        console.log('Environment:', environment);
+        console.log('API Base:', apiBase);
+        console.log('Hostname:', window.location.hostname);
+        if (manualOverride) {
+            console.log('⚠️  Manual Override Active:', manualOverride);
+        }
+        console.log('═══════════════════════════════════════');
+
+        // 5. Visual indicator for development mode
+        if (isLocalhost && !manualOverride) {
+            // Add orange border at top of page
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.style.borderTop = '5px solid #ff9800';
+                const devBanner = document.createElement('div');
+                devBanner.style.cssText = `
+                  position: fixed;
+                  bottom: 20px;
+                  right: 20px;
+                  background: #ff9800;
+                  color: white;
+                  padding: 10px 20px;
+                  border-radius: 8px;
+                  font-weight: bold;
+                  z-index: 10000;
+                  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                  font-size: 14px;
+                `;
+                devBanner.textContent = '🧪 DEV MODE - Local Backend';
+                document.body.appendChild(devBanner);
+            });
+        }
+
+        // 6. Helper functions for manual override (available in console)
+        window.setApiBase = function (url) {
+            localStorage.setItem('apiBase', url);
+            console.log('✅ API Base set to:', url);
+            console.log('🔄 Reloading page...');
+            setTimeout(() => location.reload(), 500);
+        };
+
+        window.resetApiBase = function () {
+            localStorage.removeItem('apiBase');
+            console.log('✅ API Base reset to auto-detect');
+            console.log('🔄 Reloading page...');
+            setTimeout(() => location.reload(), 500);
+        };
+
+        window.showApiConfig = function () {
+            console.log('\n╔════════════════════════════════════════╗');
+            console.log('║       API CONFIGURATION INFO           ║');
+            console.log('╠════════════════════════════════════════╣');
+            console.log('║ Current API Base:');
+            console.log('║', apiBase);
+            console.log('╠════════════════════════════════════════╣');
+            console.log('║ Environment:', isLocalhost ? 'LOCAL' : 'PRODUCTION');
+            console.log('║ Hostname:', window.location.hostname);
+            console.log('║ Override:', manualOverride || 'None');
+            console.log('╠════════════════════════════════════════╣');
+            console.log('║ Available Commands:');
+            console.log('║ • showApiConfig()      - Show this info');
+            console.log('║ • setApiBase("url")    - Override API');
+            console.log('║ • resetApiBase()       - Reset to auto');
+            console.log('╚════════════════════════════════════════╝\n');
+        };
+
+        // Show config on load (can be removed later)
+        console.log('💡 Tip: Type showApiConfig() for more info');
 
         // ============================================================================
         // DOM ELEMENTS
@@ -1636,6 +1720,8 @@
         const actionBarEl = document.getElementById("actionBar");
         const filterRowEl = document.getElementById("filterRow");
         const emptyStateEl = document.getElementById("emptyState");
+        // ============================================================================
+
 
         // ============================================================================
         // STATE VARIABLES
